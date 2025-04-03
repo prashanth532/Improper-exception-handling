@@ -1,0 +1,160 @@
+--------------------------------------------------------------------
+1. Hiding Errors (Empty Catch Block)
+--------------------------------------------------------------------
+Vulnerable Code:
+--------------------------------------------------------------------
+try {
+    int result = 10 / 0; // Division by zero
+} catch (Exception e) {
+    // Swallowing the exception
+}
+--------------------------------------------------------------------
+Why It’s Vulnerable?
+--------------------------------------------------------------------
+The exception is caught but ignored, making debugging difficult.
+
+The program continues execution without handling the error.
+--------------------------------------------------------------------
+Secure Code:
+--------------------------------------------------------------------
+try {
+    int result = 10 / 0;
+} catch (Exception e) {
+    System.err.println("Error: " + e.getMessage());
+}
+--------------------------------------------------------------------
+Fix Explanation:
+--------------------------------------------------------------------
+Logs the error message so developers can diagnose issues.
+--------------------------------------------------------------------
+
+--------------------------------------------------------------------
+2. Overly Generic Exception Handling
+--------------------------------------------------------------------
+Vulnerable Code:
+--------------------------------------------------------------------
+try:
+    user_input = int(input("Enter a number: "))
+except Exception:
+    print("Something went wrong!")
+--------------------------------------------------------------------
+Why It’s Vulnerable?
+--------------------------------------------------------------------
+Catches all exceptions, making it unclear what went wrong.
+
+It could hide critical issues like MemoryError or KeyboardInterrupt.
+--------------------------------------------------------------------
+Secure Code:
+--------------------------------------------------------------------
+try:
+    user_input = int(input("Enter a number: "))
+except ValueError:
+    print("Invalid input! Please enter a number.")
+except Exception as e:
+    print(f"Unexpected error: {e}")
+--------------------------------------------------------------------
+Fix Explanation:
+--------------------------------------------------------------------
+Handles specific exceptions (ValueError for invalid input).
+
+Catches and logs unexpected errors separately.
+--------------------------------------------------------------------
+3. Exposing Sensitive Information
+--------------------------------------------------------------------
+Vulnerable Code:
+--------------------------------------------------------------------
+try {
+    $conn = new PDO("mysql:host=localhost;dbname=test", "user", "pass");
+} catch (PDOException $e) {
+    echo "Database Error: " . $e->getMessage();
+}
+--------------------------------------------------------------------
+Why It’s Vulnerable?
+--------------------------------------------------------------------
+Displays the full database error message, which may contain sensitive info like table names or SQL queries.
+--------------------------------------------------------------------
+Secure Code:
+--------------------------------------------------------------------
+
+try {
+    $conn = new PDO("mysql:host=localhost;dbname=test", "user", "pass");
+} catch (PDOException $e) {
+    error_log("Database connection failed: " . $e->getMessage());
+    echo "An error occurred. Please try again later.";
+}
+--------------------------------------------------------------------
+Fix Explanation:
+--------------------------------------------------------------------
+Logs the error securely instead of displaying it to the user.
+
+Prevents attackers from seeing database structure details.
+--------------------------------------------------------------------
+4. Improperly Handling File Operations
+--------------------------------------------------------------------
+Vulnerable Code:
+--------------------------------------------------------------------
+try:
+    file = open("config.txt", "r")
+    content = file.read()
+    file.close()
+except FileNotFoundError:
+    pass  # Failing silently
+--------------------------------------------------------------------
+Why It’s Vulnerable?
+--------------------------------------------------------------------
+If the file is missing, the error is ignored (pass does nothing).
+
+The program might behave unexpectedly due to missing configurations.
+--------------------------------------------------------------------
+Secure Code:
+--------------------------------------------------------------------
+try:
+    with open("config.txt", "r") as file:
+        content = file.read()
+except FileNotFoundError:
+    print("Error: Configuration file not found. Using default settings.")
+    content = "default_value"
+--------------------------------------------------------------------
+Fix Explanation:
+--------------------------------------------------------------------
+Uses with open() to ensure proper file handling.
+
+Provides a fallback (default_value) instead of failing silently.
+--------------------------------------------------------------------
+5. Improper Exception Handling in API Responses
+--------------------------------------------------------------------
+Vulnerable Code:
+--------------------------------------------------------------------
+app.get("/user/:id", async (req, res) => {
+    try {
+        let user = await db.getUser(req.params.id);
+        res.json(user);
+    } catch (error) {
+        res.json({ error: error.message });
+    }
+});
+--------------------------------------------------------------------
+Why It’s Vulnerable?
+--------------------------------------------------------------------
+Returns detailed error messages in API responses.
+
+Attackers can use this information for reconnaissance.
+--------------------------------------------------------------------
+Secure Code:
+--------------------------------------------------------------------
+app.get("/user/:id", async (req, res) => {
+    try {
+        let user = await db.getUser(req.params.id);
+        res.json(user);
+    } catch (error) {
+        console.error("Error fetching user:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+--------------------------------------------------------------------
+Fix Explanation:
+--------------------------------------------------------------------
+Logs the detailed error on the server.
+
+Returns a generic error message to prevent information leakage.
+--------------------------------------------------------------------
